@@ -4,7 +4,7 @@ data "azurerm_subscription" "primary" {
 data "azurerm_client_config" "example" {
 }
 
-resource "azurerm_role_assignment" "example" {
+resource "azurerm_role_assignment" "Reader" {
   scope                = azurerm_eventhub.testeventhub.id
   role_definition_name = "Reader"
   principal_id         = data.azurerm_client_config.example.object_id
@@ -13,12 +13,12 @@ resource "azurerm_role_assignment" "example" {
 
 locals {
   resource_group = "rg-1"
-  location       = "East US"
+  location       = "West Europe"
 }
 
 resource "azurerm_resource_group" "app_grp" {
     name = "rg-1"
-    location = "East US"
+    location = "West Europe"
     
   
 }
@@ -28,7 +28,7 @@ resource "azurerm_virtual_network" "app_network" {
   location            = local.location
   resource_group_name = local.resource_group
   address_space       = ["10.0.0.0/16"]
-
+  depends_on = [ azurerm_resource_group.app_grp ]
 }
 
 resource "azurerm_subnet" "SubnetA" {
@@ -46,7 +46,7 @@ resource "azurerm_public_ip" "app_public_ip" {
   resource_group_name = local.resource_group
   location            = local.location
   allocation_method   = "Static"
-
+  depends_on = [ azurerm_resource_group.app_grp ]
 }
 resource "azurerm_network_interface" "app_interface" {
   name                = "app-interface"
@@ -72,6 +72,7 @@ resource "azurerm_storage_account" "appstore" {
   location                 = local.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
+  depends_on = [ azurerm_resource_group.app_grp ]
 
 
 }
@@ -81,17 +82,18 @@ resource "azurerm_storage_container" "data" {
   storage_account_name  = "appstore45776871909"
   container_access_type = "blob"
   depends_on = [
-    azurerm_storage_account.appstore,azurerm_resource_group.app_grp
+    azurerm_storage_account.appstore
   ]
 }
 
 
 
 resource "azurerm_eventhub_namespace" "testeventhubnamespace" {
-  name                = "testeventhub1220301"
+  name                = "testeventhub1220301902"
   location            = local.location
   resource_group_name = local.resource_group
   sku                 = "Standard"
+  depends_on = [ azurerm_resource_group.app_grp ]
 }
 resource "azurerm_eventhub" "testeventhub" {
   name                = "test-eventhub"
@@ -115,7 +117,7 @@ resource "azurerm_eventhub" "testeventhub" {
       storage_account_id  = azurerm_storage_account.appstore.id
     }
   }
-
+ depends_on = [ azurerm_resource_group.app_grp ]
 }
 
 resource "azurerm_private_endpoint" "privateendpoint1" {
@@ -136,6 +138,7 @@ resource "azurerm_private_endpoint" "privateendpoint1" {
     name                 = "example-dns-zone-group"
     private_dns_zone_ids = [azurerm_private_dns_zone.example.id]
   }
+  depends_on = [ azurerm_resource_group.app_grp ]
 }
 
 resource "azurerm_private_dns_zone" "example" {
@@ -148,6 +151,12 @@ resource "azurerm_private_dns_zone_virtual_network_link" "example" {
   resource_group_name   = local.resource_group
   private_dns_zone_name = azurerm_private_dns_zone.example.name
   virtual_network_id    = azurerm_virtual_network.app_network.id
+  depends_on = [ azurerm_resource_group.app_grp ]
 }
-
-
+resource "azurerm_management_lock" "role_assignment" {
+  name       = "role-asaignment"
+  scope      = azurerm_role_assignment.Reader.id
+  lock_level = "CanNotDelete"
+  notes      = "Locked because it's needed by a third-party"
+  depends_on = [ azurerm_resource_group.app_grp ]
+}
