@@ -13,12 +13,12 @@ resource "azurerm_role_assignment" "Reader" {
 
 locals {
   resource_group = "rg-1"
-  location       = "West Europe"
+  location       = "eastus"
 }
 
 resource "azurerm_resource_group" "app_grp" {
     name = "rg-1"
-    location = "West Europe"
+    location = "eastus"
     
   
 }
@@ -67,7 +67,7 @@ resource "azurerm_network_interface" "app_interface" {
   ]
 }
 resource "azurerm_storage_account" "appstore" {
-  name                     = "appstore45776871909"
+  name                     = "appstore457768714567"
   resource_group_name      = local.resource_group
   location                 = local.location
   account_tier             = "Standard"
@@ -79,7 +79,7 @@ resource "azurerm_storage_account" "appstore" {
 
 resource "azurerm_storage_container" "data" {
   name                  = "data"
-  storage_account_name  = "appstore45776871909"
+  storage_account_name  = "appstore457768714567"
   container_access_type = "blob"
   depends_on = [
     azurerm_storage_account.appstore
@@ -144,6 +144,7 @@ resource "azurerm_private_endpoint" "privateendpoint1" {
 resource "azurerm_private_dns_zone" "example" {
   name                = "privatelink.blob.core.windows.net"
   resource_group_name = local.resource_group
+  depends_on = [ azurerm_resource_group.app_grp ]
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "example" {
