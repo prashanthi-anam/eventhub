@@ -161,3 +161,4 @@ resource "azurerm_management_lock" "role_assignment" {
   notes      = "Locked because it's needed by a third-party"
   depends_on = [ azurerm_resource_group.app_grp ]
 }
+# az provider register --namespace Microsoft.EventHub
